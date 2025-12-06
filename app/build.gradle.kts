@@ -66,4 +66,7 @@ dependencies {
     implementation(libs.firebase.auth)      // Para Login
     implementation(libs.firebase.firestore) // Para Base de Datos
     implementation(libs.firebase.storage)   // Para Imágenes
+
+    implementation(libs.play.services.auth)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
 }

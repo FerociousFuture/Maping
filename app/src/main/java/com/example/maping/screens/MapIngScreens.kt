@@ -1,5 +1,8 @@
 package com.example.maping.screens
 
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -13,24 +16,58 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.maping.R // Asegúrate de que esto importe tus recursos
+// Importante: Esta librería habilita la inyección del ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.maping.ui.theme.InstitutionalGreen
+import com.example.maping.viewmodel.AuthViewModel
+import com.example.maping.viewmodel.UserState
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 
 // -----------------------
-// 1. PANTALLA DE INICIO DE SESIÓN
-// Referencia: PDF Página 1
+// 1. PANTALLA DE INICIO DE SESIÓN (CON GOOGLE)
 // -----------------------
 @Composable
-fun LoginScreen() {
+fun LoginScreen(
+    viewModel: AuthViewModel = viewModel(), // Inyectamos el ViewModel
+    onLoginSuccess: () -> Unit = {} // Callback para navegar cuando sea exitoso
+) {
+    val context = LocalContext.current
+    val userState by viewModel.userState.collectAsState()
+
+    // --- CONFIGURACIÓN DE GOOGLE SIGN-IN ---
+    // RECUERDA: Reemplaza "TU_CLIENT_ID..." con el ID real de tu consola de Firebase
+    val googleSignInOptions = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+        .requestIdToken("404146820646-pc9au7bcd7bp6kacdklo4lej0al23dr0.apps.googleusercontent.com")
+        .requestEmail()
+        .build()
+
+    val googleSignInClient = GoogleSignIn.getClient(context, googleSignInOptions)
+
+    // Lanzador para el resultado del Pop-up de Google
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            viewModel.signInWithGoogle(task)
+        }
+    }
+
+    // --- EFECTO DE NAVEGACIÓN ---
+    LaunchedEffect(userState) {
+        if (userState is UserState.Success) {
+            onLoginSuccess()
+        }
+    }
+
+    // --- INTERFAZ VISUAL ---
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -38,7 +75,7 @@ fun LoginScreen() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Logo Placeholder
+        // Logo
         Box(
             modifier = Modifier
                 .size(120.dp)
@@ -52,6 +89,7 @@ fun LoginScreen() {
         Text("Inicio de sesión", fontSize = 24.sp, fontWeight = FontWeight.Bold)
 
         Spacer(modifier = Modifier.height(16.dp))
+
         OutlinedTextField(
             value = "", onValueChange = {},
             label = { Text("Correo Electrónico") },
@@ -65,6 +103,7 @@ fun LoginScreen() {
         )
 
         Spacer(modifier = Modifier.height(24.dp))
+
         Button(
             onClick = {},
             colors = ButtonDefaults.buttonColors(containerColor = InstitutionalGreen),
@@ -74,6 +113,7 @@ fun LoginScreen() {
         }
 
         Spacer(modifier = Modifier.height(8.dp))
+
         OutlinedButton(
             onClick = {},
             modifier = Modifier.fillMaxWidth()
@@ -82,11 +122,33 @@ fun LoginScreen() {
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-        OutlinedButton(onClick = {}, modifier = Modifier.fillMaxWidth()) {
-            // Icono de Google simulado
+
+        // BOTÓN DE GOOGLE
+        OutlinedButton(
+            onClick = {
+                launcher.launch(googleSignInClient.signInIntent)
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
             Icon(Icons.Default.AccountCircle, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
             Text("Continuar con Google", color = Color.Black)
+        }
+
+        // Mensajes de estado
+        if (userState is UserState.Error) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = (userState as UserState.Error).message,
+                color = Color.Red,
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center
+            )
+        }
+
+        if (userState is UserState.Loading) {
+            Spacer(modifier = Modifier.height(8.dp))
+            CircularProgressIndicator(modifier = Modifier.size(24.dp), color = InstitutionalGreen)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -98,7 +160,6 @@ fun LoginScreen() {
 
 // -----------------------
 // 2. PANTALLA DEL MAPA PRINCIPAL
-// Referencia: PDF Página 2
 // -----------------------
 @Composable
 fun MainMapScreen() {
@@ -116,10 +177,14 @@ fun MainMapScreen() {
         },
         floatingActionButtonPosition = FabPosition.Center
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-            // Header
+        Column(modifier = Modifier
+            .padding(padding)
+            .fillMaxSize()) {
+
             Column(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text("Mapa", fontWeight = FontWeight.Bold, fontSize = 20.sp)
@@ -127,7 +192,6 @@ fun MainMapScreen() {
                 Text("UV", fontSize = 16.sp, color = Color.Gray)
             }
 
-            // Placeholder del Mapa
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -135,10 +199,8 @@ fun MainMapScreen() {
                     .background(Color(0xFFE0E0E0)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Vista de Mapa Aquí\n(Integración Google Maps)", textAlign = TextAlign.Center)
-                // Aquí irían los pines verdes
-                Icon(Icons.Default.LocationOn, contentDescription = null, tint = InstitutionalGreen, modifier = Modifier.size(48.dp).offset(x= (-50).dp, y= (-50).dp))
-                Icon(Icons.Default.LocationOn, contentDescription = null, tint = InstitutionalGreen, modifier = Modifier.size(48.dp).offset(x= 50.dp, y= 20.dp))
+                Text("Vista de Mapa Aquí", textAlign = TextAlign.Center)
+                Icon(Icons.Default.LocationOn, contentDescription = null, tint = InstitutionalGreen, modifier = Modifier.size(48.dp))
             }
         }
     }
@@ -146,7 +208,6 @@ fun MainMapScreen() {
 
 // -----------------------
 // 3. PANTALLA DE SUBIR PUBLICACIÓN
-// Referencia: PDF Página 3
 // -----------------------
 @Composable
 fun UploadPostScreen() {
@@ -160,7 +221,6 @@ fun UploadPostScreen() {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Área de Imagen
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -169,6 +229,7 @@ fun UploadPostScreen() {
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                // Aquí usamos Icons.Default.Image que viene de material-icons-extended o core
                 Icon(Icons.Default.Image, contentDescription = null, modifier = Modifier.size(48.dp), tint = Color.Gray)
                 Text("Selecciona una imagen", color = Color.Gray)
             }
@@ -180,6 +241,7 @@ fun UploadPostScreen() {
             colors = ButtonDefaults.buttonColors(containerColor = InstitutionalGreen),
             modifier = Modifier.fillMaxWidth()
         ) {
+            // CameraAlt requiere la librería extended, si sigue fallando usa Icons.Default.AddAPhoto
             Icon(Icons.Default.CameraAlt, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
             Text("Tomar foto")
@@ -191,7 +253,9 @@ fun UploadPostScreen() {
             value = "",
             onValueChange = {},
             label = { Text("Agrega un comentario:") },
-            modifier = Modifier.fillMaxWidth().height(100.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(100.dp),
             singleLine = false
         )
 
@@ -214,7 +278,6 @@ fun UploadPostScreen() {
 
 // -----------------------
 // 4. PANTALLA DETALLE DEL LUGAR
-// Referencia: PDF Página 4
 // -----------------------
 @Composable
 fun PlaceDetailScreen() {
@@ -222,7 +285,6 @@ fun PlaceDetailScreen() {
         Text("Detalle del Lugar", fontSize = 22.sp, color = InstitutionalGreen, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.CenterHorizontally))
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Imagen del lugar
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -234,10 +296,7 @@ fun PlaceDetailScreen() {
 
         Text("Laboratorio de robotica", fontSize = 24.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            "Esta muy bien equipado, se encuentra entre el edificio N y L, en planta baja.",
-            fontSize = 16.sp
-        )
+        Text("Esta muy bien equipado...", fontSize = 16.sp)
         Spacer(modifier = Modifier.height(8.dp))
         Text("Subido por @user123", color = Color.Gray, fontSize = 14.sp)
 
@@ -257,7 +316,6 @@ fun PlaceDetailScreen() {
 
 // -----------------------
 // 5. PANTALLA DE PERFIL
-// Referencia: PDF Página 5
 // -----------------------
 @Composable
 fun ProfileScreen() {
@@ -268,7 +326,6 @@ fun ProfileScreen() {
         Text("Perfil", fontSize = 22.sp, color = InstitutionalGreen, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Avatar
         Box(
             modifier = Modifier
                 .size(100.dp)
@@ -279,7 +336,6 @@ fun ProfileScreen() {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Estadísticas
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
@@ -291,7 +347,6 @@ fun ProfileScreen() {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Grid de fotos
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
