@@ -69,4 +69,17 @@ dependencies {
 
     implementation(libs.play.services.auth)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+
+    implementation(libs.play.services.location)
+    implementation(libs.androidx.navigation.compose)
+
+    implementation(libs.play.services.auth)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.play.services.location) // GPS
+
+    // --- AGREGA ESTAS LÍNEAS PARA EL MAPA ---
+    implementation(libs.maps.compose)
+    implementation(libs.play.services.maps)
+
+
 }
