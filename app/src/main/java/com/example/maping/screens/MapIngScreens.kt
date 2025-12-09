@@ -174,7 +174,7 @@ fun MainMapScreen(
     onNavigateToUpload: () -> Unit,
     onNavigateToProfile: () -> Unit
 ) {
-    // 2stado de los posts
+    // estado de los posts
     val posts by viewModel.posts.collectAsState()
 
     // Coordenadas iniciales (FIEE UV - Aproximadas)
