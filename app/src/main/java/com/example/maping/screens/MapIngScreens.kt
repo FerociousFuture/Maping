@@ -7,7 +7,6 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,13 +16,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Nfc
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -171,9 +170,9 @@ fun LoginScreen(
 // -----------------------
 @Composable
 fun MainMapScreen(
-viewModel: MapViewModel = viewModel(),
-onNavigateToUpload: () -> Unit,
-onNavigateToProfile: () -> Unit
+    viewModel: MapViewModel = viewModel(),
+    onNavigateToUpload: () -> Unit,
+    onNavigateToProfile: () -> Unit
 ) {
     // 2stado de los posts
     val posts by viewModel.posts.collectAsState()
@@ -381,6 +380,7 @@ fun UploadPostScreen(
 // -----------------------
 // 4. PANTALLA DETALLE DEL LUGAR
 // -----------------------
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlaceDetailScreen() {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -478,5 +478,69 @@ fun StatItem(count: String, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(count, fontWeight = FontWeight.Bold, fontSize = 18.sp)
         Text(label, fontSize = 12.sp, color = Color.Gray)
+    }
+}
+
+// -----------------------
+// 6. PANTALLA DETALLE NFC (NUEVA)
+// -----------------------
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NfcDetailScreen(
+    tagData: String,
+    onNavigateBack: () -> Unit
+) {
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("Información NFC", color = Color.White) },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = Color.White)
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = InstitutionalGreen)
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                Icons.Default.Nfc, // Icono NFC
+                contentDescription = "NFC Tag",
+                tint = InstitutionalGreen,
+                modifier = Modifier.size(96.dp)
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                "¡Tag NFC detectado!",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = InstitutionalGreen
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = InstitutionalGreen.copy(alpha = 0.1f))
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Contenido del Tag:", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(tagData, color = Color.Black, fontSize = 14.sp)
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                "Esta funcionalidad permite a los estudiantes obtener información sobre laboratorios, salones o puntos de interés al acercar su dispositivo a un tag NFC.",
+                textAlign = TextAlign.Center,
+                color = Color.Gray,
+                fontSize = 12.sp
+            )
+        }
     }
 }
